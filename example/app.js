@@ -1,39 +1,18 @@
-// This is a test harness for your module
-// You should do something interesting in this harness 
-// to test out the module and to provide instructions 
-// to users on how to use it by example.
-
-
-// open a single window
-var win = Ti.UI.createWindow({
-	backgroundColor:'white'
+$.win.open();
+var push = require('com.yeshcp.jpush');
+//push.resumePush();
+push.setAliasAndTags('chelsea',['grade1','grade2'],function(e){
+    alert('setAliasAndTags' + JSON.stringify(e));
 });
-var label = Ti.UI.createLabel();
-win.add(label);
-win.open();
 
-// TODO: write your module tests here
-var jpush = require('com.yeshcp.jpush');
-Ti.API.info("module is => " + jpush);
+setTimeout(function(){
+    push.setAlias('',function(e){
+        alert('setAlias' + JSON.stringify(e));
+    });
+},5000);
 
-label.text = jpush.example();
-
-Ti.API.info("module exampleProp is => " + jpush.exampleProp);
-jpush.exampleProp = "This is a test value";
-
-if (Ti.Platform.name == "android") {
-	var proxy = jpush.createExample({
-		message: "Creating an example Proxy",
-		backgroundColor: "red",
-		width: 100,
-		height: 100,
-		top: 100,
-		left: 150
-	});
-
-	proxy.printMessage("Hello world!");
-	proxy.message = "Hi world!.  It's me again.";
-	proxy.printMessage("Hello world!");
-	win.add(proxy);
-}
-
+setTimeout(function(){
+    push.setTags([],function(e){
+        alert('setTags' + JSON.stringify(e));
+    });
+},10000);
