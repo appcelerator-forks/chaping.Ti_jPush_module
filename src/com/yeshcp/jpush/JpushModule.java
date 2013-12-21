@@ -8,13 +8,18 @@
  */
 package com.yeshcp.jpush;
 
-import org.appcelerator.kroll.KrollModule;
-import org.appcelerator.kroll.annotations.Kroll;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
 
+import org.appcelerator.kroll.KrollModule;
+import org.appcelerator.kroll.KrollDict;
+import org.appcelerator.kroll.annotations.Kroll;
+import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.kroll.common.Log;
-
 import cn.jpush.android.api.JPushInterface;
+import cn.jpush.android.api.TagAliasCallback;
 
 @Kroll.module(name="Jpush", id="com.yeshcp.jpush")
 public class JpushModule extends KrollModule
@@ -35,9 +40,70 @@ public class JpushModule extends KrollModule
 	public static void onAppCreate(TiApplication app)
 	{
 		Log.d(TAG, "inside onAppCreate");
-		// put module init code that needs to run when the application is created
 		JPushInterface.setDebugMode(true);
-        JPushInterface.init(app.getInstance());
+        JPushInterface.init(app); //init jpush
+	}
+	@Kroll.method
+	public void stopPush(){ //stop push
+		JPushInterface.stopPush(TiApplication.getInstance());
+	}
+	
+	@Kroll.method
+	public void resumePush(){ //resume push
+		JPushInterface.resumePush(TiApplication.getInstance());
+	}
+	
+	@Kroll.method
+	public void setAliasAndTags(String alias, Object[] tags,final KrollFunction callback){//设置标签与别名,callback参数必须设置final
+		Set set=new HashSet();
+		for(Object n : tags){ //把object数组转化为set,因为jpush需要传入一个set类型
+		   set.add(n.toString());
+		}
+		JPushInterface.setAliasAndTags(TiApplication.getInstance(),alias,set,new TagAliasCallback(){//使用匿名内部类作为回调类
+			@Override
+			public void gotResult(int arg0, String arg1,Set<String> arg2) {
+				Log.d("JPush", "Jpush setAliasAndTags status: " + arg0);//状态
+				if(callback != null){
+					KrollDict map = new KrollDict(); //回调函数的参数
+		            map.put("code", arg0);	       
+					callback.callAsync(getKrollObject(),map); //执行回调
+				}
+			}
+		});
+	}
+	
+	@Kroll.method
+	public void setAlias(String alias,final KrollFunction callback){
+		JPushInterface.setAlias(TiApplication.getInstance(),alias,new TagAliasCallback(){
+			@Override
+			public void gotResult(int arg0, String arg1,Set<String> arg2) {
+				Log.d("JPush", "Jpush setAlias status: " + arg0);//状态
+				if(callback != null){
+					KrollDict map = new KrollDict();
+		            map.put("code", arg0);	     
+					callback.callAsync(getKrollObject(),map);
+				}
+			}
+		});
+	}
+	
+	@Kroll.method
+	public void setTags(Object[] tags,final KrollFunction callback){
+		Set set=new HashSet();
+		for(Object n : tags){
+		   set.add(n.toString());
+		}
+		JPushInterface.setTags(TiApplication.getInstance(),set,new TagAliasCallback(){
+			@Override
+			public void gotResult(int arg0, String arg1,Set<String> arg2) {
+				Log.d("JPush", "Jpush setTags status: " + arg0);//状态
+				if(callback != null){
+		            KrollDict map = new KrollDict();
+		            map.put("code", arg0);	            
+					callback.callAsync(getKrollObject(),map);
+				}
+			}
+		});
 	}
 }
 
