@@ -11,9 +11,13 @@ package com.yeshcp.jpush;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
+import android.content.Context;  
+import android.content.Intent;
+import android.os.Bundle;
 
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.KrollDict;
+import org.appcelerator.kroll.KrollObject;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.titanium.TiApplication;
@@ -27,7 +31,32 @@ public class JpushModule extends KrollModule
 
 	// Standard Debugging variables
 	private static final String TAG = "JpushModule";
-
+	
+	
+	/********供自定义消息广播接收使用***************/
+	public static KrollObject ko = null; //供自定义消息广播接收使用
+	public static KrollFunction kf = null; //供自定义消息广播接收使用
+	public static void _onMessageReceived(Intent intent,Context context){//供消息广播接收类使用的函数
+		if(JpushModule.kf != null){
+			
+			Bundle bundle = intent.getExtras();
+			String title = bundle.getString(JPushInterface.EXTRA_TITLE);
+			String message = bundle.getString(JPushInterface.EXTRA_MESSAGE);
+			String extras = bundle.getString(JPushInterface.EXTRA_EXTRA);
+			String type = bundle.getString(JPushInterface.EXTRA_CONTENT_TYPE);
+			String file = bundle.getString(JPushInterface.EXTRA_RICHPUSH_FILE_PATH);
+			
+			KrollDict map = new KrollDict();
+	        map.put("title", title);
+	        map.put("message", message);
+	        map.put("extras", extras);
+	        map.put("type", type);
+	        map.put("file", file);
+	        
+	        JpushModule.kf.callAsync(JpushModule.ko,map);
+		}
+	}
+	/************************/
 	// You can define constants with @Kroll.constant, for example:
 	// @Kroll.constant public static final String EXTERNAL_NAME = value;
 	
@@ -36,16 +65,25 @@ public class JpushModule extends KrollModule
 		super();
 	}
 
-	@Kroll.onAppCreate
-	public static void onAppCreate(TiApplication app)
+	@Kroll.onAppCreate 
+	public static void onAppCreate(TiApplication app) //程序创建时会执行这里的东西
 	{
 		Log.d(TAG, "inside onAppCreate");
 		JPushInterface.setDebugMode(true);
         JPushInterface.init(app); //init jpush
 	}
+	
+	/********供自定义消息广播接收使用***************/
+	@Kroll.method
+	public void onMessageReceived(final KrollFunction callback){
+		JpushModule.ko = getKrollObject();
+		JpushModule.kf = callback;
+	}
+	/***********************/
+	
 	@Kroll.method
 	public void stopPush(){ //stop push
-		JPushInterface.stopPush(TiApplication.getInstance());
+		JPushInterface.stopPush(TiApplication.getInstance());//TiApplication.getInstance()得到当前的application contxe
 	}
 	
 	@Kroll.method
@@ -53,6 +91,7 @@ public class JpushModule extends KrollModule
 		JPushInterface.resumePush(TiApplication.getInstance());
 	}
 	
+	//js中的类型到了java中，会自动转换：特殊的比如js数组会转化成java的Object[]数组,函数会转化成KrollFunction对象
 	@Kroll.method
 	public void setAliasAndTags(String alias, Object[] tags,final KrollFunction callback){//设置标签与别名,callback参数必须设置final
 		Set set=new HashSet();
